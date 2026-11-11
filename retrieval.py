@@ -12,20 +12,20 @@ def terms(s):
 def extract_profile(message, profile):
     updated=dict(profile)
     normalized=message.lower()
-    age=re.search(r"\\b(?:i am|i'm|age(?:d)?|years? old)\\s*(\\d{1,3})\\b|\\b(\\d{1,3})\\s*(?:years? old|yr old)\\b",normalized)
+    age=re.search(r"\b(?:i am|i'm|age(?:d)?|years? old)\s*(\d{1,3})\b|\b(\d{1,3})\s*(?:years? old|yr old)\b",normalized)
     if age:
         value=int(next(v for v in age.groups() if v))
         if 0 < value < 120: updated["age"]=value
-    if re.search(r"\\b(?:farmer|famer|farmar|farming|agriculturist)\\b",normalized):
+    if re.search(r"\b(?:farmer|famer|farmar|farming|agriculturist)\b",normalized):
         updated["farmer"]=True
-    if re.search(r"\\bkerala\\b",normalized): updated["state"]="Kerala"
-    if re.search(r"\\b(?:karnataka|tamil nadu|maharashtra)\\b",normalized):
-        updated["state"]=re.search(r"\\b(karnataka|tamil nadu|maharashtra)\\b",normalized).group(1).title()
+    if re.search(r"\bkerala\b",normalized): updated["state"]="Kerala"
+    if re.search(r"\b(?:karnataka|tamil nadu|maharashtra)\b",normalized):
+        updated["state"]=re.search(r"\b(karnataka|tamil nadu|maharashtra)\b",normalized).group(1).title()
     return updated
 
 def answer(message,profile):
     profile=extract_profile(message,profile)
-    introduction=re.search(r"\\b(?:i am|i'm|im|my age|from kerala|famer|farmer)\\b",message.lower()) is not None
+    introduction=re.search(r"\b(?:i am|i'm|im|my age|from kerala|famer|farmer)\b",message.lower()) is not None
     if profile.get("farmer") and introduction and not (terms(message) & {"apply","application","documents","eligible","eligibility"}):
         details=[]
         if profile.get("age"): details.append(str(profile["age"])+" years old")
