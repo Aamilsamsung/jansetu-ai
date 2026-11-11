@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pathlib import Path
+import os
 import json
 
 ROOT = Path(__file__).resolve().parent
@@ -58,7 +59,7 @@ def index():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "schemes": len(SCHEMES)}
+    return {"status": "ok", "schemes": len(SCHEMES), "ai_configured": bool(os.getenv("GEMINI_API_KEY"))}
 
 @app.get("/api/schemes")
 def list_schemes():
@@ -106,4 +107,13 @@ def chat(req: ChatRequest):
 @app.post("/api/ask")
 def ask(req: ChatRequest):
     from retrieval import answer
-    return answer(req.message,req.profile)
+    result = answer(req.message, req.profile)
+    if result.get("grounding") in {"curated_records", "rule_assessment", "profile_intake"}:
+        from gemini_agent import explain
+        generated = explain(req.message, result.get("profile", {}), result)
+        if generated:
+            result["reply"] = generated + "\n\nVerified rule-based assessment: " + result["reply"]
+            result["ai_used"] = True
+        else:
+            result["ai_used"] = False
+    return result
