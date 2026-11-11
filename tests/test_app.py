@@ -17,3 +17,20 @@ def test_sources():
     assert all(s["source"].startswith("https://www.myscheme.gov.in/") for s in SCHEMES)
 def test_route():
     assert client.get("/").status_code == 200
+
+def test_professional_exclusion_explained():
+    profile={"farmer":True,"owns_cultivable_land":True,"excluded_professional":True}
+    data=client.post("/api/chat",json={"profile":profile,"focus":"pmkisan"}).json()
+    assert data["question_field"] is None
+    assert "NOT ELIGIBLE" in data["reply"]
+    assert "excluded-professional" not in data["reply"]
+    assert "practising registered professional" in data["reply"]
+
+def test_pmkisan_eligible_summary():
+    profile={"farmer":True,"owns_cultivable_land":True,"income_tax_payer":False,
+             "excluded_public_office":False,"excluded_government_employment":False,
+             "excluded_professional":False}
+    data=client.post("/api/chat",json={"profile":profile,"focus":"pmkisan"}).json()
+    assert "POTENTIALLY ELIGIBLE" in data["reply"]
+    assert "₹6,000" in data["reply"]
+    assert "How to apply" in data["reply"]
