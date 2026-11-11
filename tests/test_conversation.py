@@ -37,3 +37,21 @@ def test_farmer_ambiguous_answer_reprompts():
     second=answer("maybe",first["profile"])
     assert second["grounding"]=="clarification"
     assert second["profile"]["_pending_field"]=="owns_cultivable_land"
+
+def test_farmer_complete_interview_reports_amount():
+    result=answer("i am 65 famer from kerala pls help",{})
+    for reply in ("yes","no","no","no","no"):
+        result=answer(reply,result["profile"])
+    assert result["grounding"]=="rule_assessment"
+    assert result["assessment"]["status"]=="potentially_eligible"
+    assert "₹6,000 per year" in result["reply"]
+    assert "Documents to prepare" in result["reply"]
+    assert "How to apply" in result["reply"]
+    assert result["sources"]
+
+def test_farmer_tax_exclusion():
+    result=answer("i am 65 famer from kerala pls help",{})
+    result=answer("yes",result["profile"])
+    result=answer("yes",result["profile"])
+    assert result["assessment"]["status"]=="not_eligible"
+    assert "₹6,000 per year" not in result["reply"]
