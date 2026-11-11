@@ -14,5 +14,33 @@ async function next(){try{const data=await api("/api/chat",{profile,focus});fiel
 async function submit(value,label){if(!field){const message=String(value??"").trim();if(!message)return;bubble(message,true);el("input").value="";try{const data=await api("/api/ask",{message,profile});if(data.profile)profile=data.profile;bubble(data.reply);speak(data.reply);if(data.matches?.length){const rows=await api("/api/check",{profile});render(rows.filter(r=>data.matches.includes(r.scheme.id)))}}catch(e){bubble("The answer service is unavailable. Please try again.")}return}if(value===null){bubble("Not sure",true);bubble("We cannot confirm this rule without accurate information. Please check the official source.");field=null;el("answers").innerHTML="";return}if(field==="annual_household_income"){const n=Number(String(value).replace(/[₹,\s]/g,""));if(!Number.isFinite(n)||n<0||String(value).trim()===""){bubble("Enter a valid non-negative amount.");return}value=n}else if(typeof value!=="boolean"){const v=String(value).trim().toLowerCase();if(["yes","y","true","haan","ஆம்","ಹೌದು"].includes(v))value=true;else if(["no","n","false","nahi","இல்லை","ಇಲ್ಲ"].includes(v))value=false;else{bubble("Select Yes or No using the buttons.");return}}bubble(label??String(value),true);profile[field]=value;el("input").value="";await next()}
 el("send").onclick=()=>submit(el("input").value,el("input").value);el("input").addEventListener("keydown",e=>{if(e.key==="Enter")el("send").click()});el("reset").onclick=()=>{profile={};focus=null;field=null;el("chat").innerHTML="";el("answers").innerHTML="";bubble("Session cleared. Select a scheme to start.");refresh()};
 async function refresh(){try{render(await api("/api/check",{profile}))}catch(e){bubble("Scheme API unavailable. Check the backend status.")}}
-el("mic").onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){el("voiceStatus").textContent="This browser does not support speech recognition. Please type.";return}const rec=new SR();rec.lang=el("lang").value;rec.interimResults=false;rec.onresult=e=>{el("input").value=e.results[0][0].transcript;el("voiceStatus").textContent="Speech captured. Check your answer then click Send."};rec.onerror=e=>el("voiceStatus").textContent="Microphone error: "+e.error;rec.start();el("voiceStatus").textContent="Listening..."};fetch("/api/schemes").then(r=>{if(!r.ok)throw Error();return r.json()}).then(rows=>{schemes=rows;refresh()}).catch(()=>bubble("Backend unavailable. Check Render API connection."));
+let recognition=null,recording=false;
+function micStatus(message){el("voiceStatus").textContent=message;el("mic").setAttribute("aria-pressed",String(recording));el("mic").title=recording?"Stop recording":"Start voice input"}
+el("mic").onclick=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){micStatus("Voice recognition is not supported in this browser. Try Chrome or Edge, or type your message.");return}
+  if(recording&&recognition){recognition.stop();micStatus("Finishing transcription...");return}
+  if(!window.isSecureContext){micStatus("Microphone requires HTTPS.");return}
+  try{
+    const rec=new SR();recognition=rec;recording=true;
+    rec.lang=el("lang").value;rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;
+    let finalText="";
+    rec.onstart=()=>micStatus("Listening... speak clearly. Tap the microphone again to stop.");
+    rec.onresult=e=>{
+      let interim="";
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const result=e.results[i];if(result.isFinal)finalText+=result[0].transcript+" ";else interim+=result[0].transcript;
+      }
+      el("input").value=(finalText+interim).trim();
+      micStatus(interim?"Hearing: "+interim:"Speech captured. Tap Send to submit.");
+    };
+    rec.onerror=e=>{
+      recording=false;
+      const reasons={ "not-allowed":"Microphone permission denied. Allow microphone access in browser site settings.","no-speech":"No speech detected. Try again closer to the microphone.","audio-capture":"No microphone found or microphone is busy.","network":"Speech recognition service unavailable. Check your connection.","language-not-supported":"This browser cannot recognize the selected language."};
+      micStatus(reasons[e.error]||"Voice input error: "+e.error);
+    };
+    rec.onend=()=>{recording=false;recognition=null;if(el("voiceStatus").textContent.startsWith("Listening")||el("voiceStatus").textContent.startsWith("Hearing"))micStatus(el("input").value?"Transcription ready. Tap Send.":"Stopped. Tap microphone to retry.");el("mic").setAttribute("aria-pressed","false")};
+    rec.start();
+  }catch(e){recording=false;recognition=null;micStatus("Could not start microphone. Check permission and retry.")}
+}fetch("/api/schemes").then(r=>{if(!r.ok)throw Error();return r.json()}).then(rows=>{schemes=rows;refresh()}).catch(()=>bubble("Backend unavailable. Check Render API connection."));
 </script></body></html>
