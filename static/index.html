@@ -36,7 +36,7 @@ el("mic").onclick=()=>{
     };
     rec.onerror=e=>{
       recording=false;
-      const reasons={ "not-allowed":"Microphone permission denied. Allow microphone access in browser site settings.","no-speech":"No speech detected. Try again closer to the microphone.","audio-capture":"No microphone found or microphone is busy.","network":"Speech recognition service unavailable. Check your connection.","language-not-supported":"This browser cannot recognize the selected language."};
+      const reasons={ "not-allowed":"Microphone permission denied. Allow microphone access in browser site settings.","no-speech":"No speech detected. Try again closer to the microphone.","audio-capture":"No microphone found or microphone is busy.","network":"Your browser speech-recognition provider could not connect. This does not mean your microphone is broken. Try Chrome or Edge, switch to English, or type your message. Browser speech recognition may be unavailable on this network.","language-not-supported":"This browser cannot recognize the selected language."};
       micStatus(reasons[e.error]||"Voice input error: "+e.error);
     };
     rec.onend=()=>{recording=false;recognition=null;if(el("voiceStatus").textContent.startsWith("Listening")||el("voiceStatus").textContent.startsWith("Hearing"))micStatus(el("input").value?"Transcription ready. Tap Send.":"Stopped. Tap microphone to retry.");el("mic").setAttribute("aria-pressed","false")};
