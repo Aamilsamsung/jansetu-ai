@@ -23,35 +23,60 @@ def extract_profile(message, profile):
         updated["state"]=re.search(r"\b(karnataka|tamil nadu|maharashtra)\b",normalized).group(1).title()
     return updated
 
+FARMER_FIELDS=[
+ ("owns_cultivable_land","Do you own cultivable agricultural land?"),
+ ("income_tax_payer","Does your farmer family pay income tax?"),
+ ("excluded_public_office","Is anyone in your farmer family an excluded public-office holder?"),
+ ("excluded_government_employment","Does your farmer family include a government employee or pensioner covered by PM-KISAN exclusions?"),
+ ("excluded_professional","Does your farmer family include a practising registered professional covered by PM-KISAN exclusions?")
+]
+YES={"yes","y","yeah","yep","haan","true","i do","yes i do"}
+NO={"no","n","nope","nah","false","i don't","i do not"}
+def response(reply,profile,grounding,matches=None,assessment=None):
+    result={"reply":reply,"profile":profile,"grounding":grounding,"matches":matches or [],"sources":[s["source"] for s in SCHEMES if s["id"] in (matches or [])]}
+    if assessment is not None: result["assessment"]=assessment
+    return result
+
 def answer(message,profile):
     profile=extract_profile(message,profile)
     normalized=message.strip().lower()
     pending=profile.pop("_pending_field",None)
-    if pending=="owns_cultivable_land":
-        yes={"yes","y","yeah","yep","haan","ha","true","i do","yes i do","yes i own","yes i have"}
-        no={"no","n","nope","nah","false","i don't","i do not","no i don't"}
-        if normalized in yes or normalized.startswith(("yes ","yeah ","i own ","i have ")):
-            profile["owns_cultivable_land"]=True
-        elif normalized in no or normalized.startswith(("no ","i don't own ","i do not own ")):
-            profile["owns_cultivable_land"]=False
-        else:
+    if pending:
+        yes=normalized in YES or normalized.startswith(("yes ","yeah ","i own ","i have "))
+        no=normalized in NO or normalized.startswith(("no ","i don't own ","i do not own "))
+        if not yes and not no:
             profile["_pending_field"]=pending
-            return {"reply":"Please answer yes or no: do you own cultivable agricultural land?","sources":[],"matches":[],"grounding":"clarification","profile":profile}
-    if profile.get("farmer") and "owns_cultivable_land" not in profile:
-        profile["_pending_field"]="owns_cultivable_land"
-        details=[]
-        if profile.get("age"): details.append(str(profile["age"])+" years old")
-        details.append("a farmer")
-        if profile.get("state"): details.append("from "+profile["state"])
-        return {"reply":"I understand you're "+", ".join(details)+". Do you own cultivable agricultural land? I will use your answer to check farming schemes, but further eligibility conditions may apply.","sources":["https://www.myscheme.gov.in/hi/schemes/pm-kisan"],"matches":["pmkisan","kcc"],"grounding":"profile_intake","profile":profile}
-    if pending=="owns_cultivable_land" and "owns_cultivable_land" in profile:
-        scheme=next(s for s in SCHEMES if s["id"]=="pmkisan")
-        result=evaluate(profile,scheme)
-        if result["status"]=="not_eligible":
-            reply="Based on your answer, you do not meet the landholding condition in our preliminary PM-KISAN check. Other agricultural credit schemes may have different rules."
-        else:
-            reply="Thanks. You meet the landholding condition for the preliminary PM-KISAN check, but this does NOT confirm eligibility. We still need to check exclusions, including income tax and certain employment or professional categories."
-        return {"reply":reply+" Official scheme information: "+scheme["source"],"sources":[scheme["source"]],"matches":["pmkisan","kcc"],"grounding":"rule_assessment","assessment":result,"profile":profile}
+            question=next((q for field,q in FARMER_FIELDS if field==pending),"Please answer yes or no.")
+            return response("Please answer yes or no. "+question,profile,"clarification",["pmkisan","kcc"])
+        profile[pending]=yes
+    if profile.get("farmer"):
+        pmkisan=next(s for s in SCHEMES if s["id"]=="pmkisan")
+        assessment=evaluate(profile,pmkisan)
+        if assessment["status"]=="not_eligible":
+            return response("PM-KISAN: our preliminary rule check found an exclusion or unmet condition ("+", ".join(assessment["failed"])+"). This does not determine eligibility for Kisan Credit Card, which depends on bank assessment. Official source: "+pmkisan["source"],profile,"rule_assessment",["pmkisan","kcc"],assessment)
+        missing=next(((field,question) for field,question in FARMER_FIELDS if field not in profile),None)
+        if missing:
+            field,question=missing
+            profile["_pending_field"]=field
+            intro=""
+            if pending=="owns_cultivable_land":
+                intro="Thanks. You meet the landholding condition for the preliminary PM-KISAN check, but this does NOT confirm eligibility. "
+            elif pending:
+                intro="Thanks, I've recorded that answer. "
+            else:
+                details=[]
+                if profile.get("age"): details.append(str(profile["age"])+" years old")
+                details.append("a farmer")
+                if profile.get("state"): details.append("from "+profile["state"])
+                intro="I understand you're "+", ".join(details)+". "
+            return response(intro+question,profile,"rule_assessment" if pending else "profile_intake",["pmkisan","kcc"],assessment)
+        if assessment["status"]=="potentially_eligible":
+            reply=("Preliminary result: you potentially qualify for PM-KISAN. The listed benefit is ₹6,000 per year, paid in three instalments, subject to official verification and exclusions. "
+                   "Documents to prepare: "+", ".join(pmkisan["documents"])+". "
+                   "How to apply: "+"; ".join(pmkisan["steps"])+". "
+                   "Official source: "+pmkisan["source"]+". "
+                   "Kisan Credit Card may also be relevant, but credit amount and approval depend on the bank. This is NOT government approval.")
+            return response(reply,profile,"rule_assessment",["pmkisan","kcc"],assessment)
     query=terms(message)
     if profile.get("farmer"): query.update({"farmer","agriculture","kisan","crop","farming","land","kcc"})
     ranked=[]
