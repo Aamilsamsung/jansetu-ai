@@ -33,7 +33,8 @@ def answer(message,profile):
         if profile.get("state"): details.append("from "+profile["state"])
         return {"reply":"I understand you're "+", ".join(details)+". I can help you explore farming schemes such as PM-KISAN and Kisan Credit Card. Do you own cultivable agricultural land? This is a preliminary check; other eligibility conditions may apply.","sources":["https://www.myscheme.gov.in/schemes/pm-kisan","https://www.myscheme.gov.in/schemes/kcc"],"matches":[],"grounding":"profile_intake","profile":profile}
 
-    query=terms(message)\n    if profile.get("farmer"): query.update({"farmer","agriculture","kisan","crop","farming","land","kcc"})
+    query=terms(message)
+    if profile.get("farmer"): query.update({"farmer","agriculture","kisan","crop","farming","land","kcc"})
     ranked=[]
     for scheme in SCHEMES:
         text=" ".join([scheme["name"],scheme["category"],scheme["benefit"]," ".join(scheme["documents"])," ".join(scheme["steps"])," ".join(r["field"].replace("_"," ") for r in scheme["rules"])])
