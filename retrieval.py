@@ -16,7 +16,7 @@ def extract_profile(message, profile):
     if age:
         value=int(next(v for v in age.groups() if v))
         if 0 < value < 120: updated["age"]=value
-    if re.search(r"\\b(?:farmer|famer|farming|agriculturist)\\b",normalized):
+    if re.search(r"\\b(?:farmer|famer|farmar|farming|agriculturist)\\b",normalized):
         updated["farmer"]=True
     if re.search(r"\\bkerala\\b",normalized): updated["state"]="Kerala"
     if re.search(r"\\b(?:karnataka|tamil nadu|maharashtra)\\b",normalized):
@@ -26,14 +26,14 @@ def extract_profile(message, profile):
 def answer(message,profile):
     profile=extract_profile(message,profile)
     introduction=re.search(r"\\b(?:i am|i'm|im|my age|from kerala|famer|farmer)\\b",message.lower()) is not None
-    if introduction and profile.get("farmer") and not (terms(message) & {"apply","application","documents","eligible","eligibility"}):
+    if profile.get("farmer") and introduction and not (terms(message) & {"apply","application","documents","eligible","eligibility"}):
         details=[]
         if profile.get("age"): details.append(str(profile["age"])+" years old")
         details.append("a farmer")
         if profile.get("state"): details.append("from "+profile["state"])
         return {"reply":"I understand you're "+", ".join(details)+". I can help you explore farming schemes such as PM-KISAN and Kisan Credit Card. Do you own cultivable agricultural land? This is a preliminary check; other eligibility conditions may apply.","sources":["https://www.myscheme.gov.in/schemes/pm-kisan","https://www.myscheme.gov.in/schemes/kcc"],"matches":[],"grounding":"profile_intake","profile":profile}
 
-    query=terms(message)
+    query=terms(message)\n    if profile.get("farmer"): query.update({"farmer","agriculture","kisan","crop","farming","land","kcc"})
     ranked=[]
     for scheme in SCHEMES:
         text=" ".join([scheme["name"],scheme["category"],scheme["benefit"]," ".join(scheme["documents"])," ".join(scheme["steps"])," ".join(r["field"].replace("_"," ") for r in scheme["rules"])])
