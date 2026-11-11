@@ -71,11 +71,10 @@ def answer(message,profile):
                 intro="I understand you're "+", ".join(details)+". "
             return response(intro+question,profile,"rule_assessment" if pending else "profile_intake",["pmkisan","kcc"],assessment)
         if assessment["status"]=="potentially_eligible":
-            reply=("Preliminary result: you potentially qualify for PM-KISAN. The listed benefit is ₹6,000 per year, paid in three instalments, subject to official verification and exclusions. "
+            reply=("You may qualify for PM-KISAN! Benefit: ₹6,000 per year. "
                    "Documents to prepare: "+", ".join(pmkisan["documents"])+". "
                    "How to apply: "+"; ".join(pmkisan["steps"])+". "
-                   "Official source: "+pmkisan["source"]+". "
-                   "Kisan Credit Card may also be relevant, but credit amount and approval depend on the bank. This is NOT government approval.")
+                   "Official details: "+pmkisan["source"]+". Final approval requires official verification.")
             return response(reply,profile,"rule_assessment",["pmkisan","kcc"],assessment)
     query=terms(message)
     if profile.get("farmer"): query.update({"farmer","agriculture","kisan","crop","farming","land","kcc"})
