@@ -75,13 +75,33 @@ def chat(req: ChatRequest):
         selected = [row for row in results if row["scheme"]["id"] == req.focus]
         if selected:
             results = selected
-    candidates = [row for row in results if row["assessment"]["status"] == "needs_information"]
-    priority = {"farmer": 0, "urban": 1, "nfsa_household": 2, "pmjay_verified_beneficiary": 3, "owns_cultivable_land": 4, "annual_household_income": 5}
-    if candidates:
-        missing = sorted({field for row in candidates for field in row["assessment"]["missing"]}, key=lambda x: priority.get(x, 20))
-        field = missing[0]
-        return {"reply": QUESTIONS[field], "question_field": field, "results": results, "disclaimer": "Unofficial preliminary guidance; verify on the official government portal."}
-    return {"reply": "Your preliminary assessment is ready. Review each scheme for reasons, required documents, steps and official source.", "question_field": None, "results": results, "disclaimer": "Unofficial preliminary guidance; verify on the official government portal."}
+    if not results:
+        return {"reply":"Scheme not found. Please select a listed scheme.","question_field":None,"results":[]}
+    selected=results[0]
+    assessment=selected["assessment"]
+    scheme=selected["scheme"]
+    readable=lambda field: QUESTIONS.get(field,field.replace("_"," "))
+    if assessment["status"]=="not_eligible":
+        reasons="; ".join(readable(field) for field in assessment["failed"])
+        reply=(f"Preliminary result for {scheme['name']}: NOT ELIGIBLE based on the answers provided. "
+               f"Unmet condition(s): {reasons}. "
+               "If you answered incorrectly, reset and check again. "
+               f"Official source: {scheme['source']}. This is not an official decision.")
+        return {"reply":reply,"question_field":None,"results":results,"disclaimer":"Unofficial preliminary guidance; verify on the official government portal."}
+    if assessment["status"]=="potentially_eligible":
+        reply=(f"Preliminary result: POTENTIALLY ELIGIBLE for {scheme['name']}. "
+               f"Listed benefit: {scheme['benefit']} "
+               f"Documents: {'; '.join(scheme['documents'])}. "
+               f"How to apply: {'; '.join(scheme['steps'])}. "
+               f"Official source: {scheme['source']}. "
+               "This is not approval; final eligibility is determined by the responsible authority.")
+        return {"reply":reply,"question_field":None,"results":results,"disclaimer":"Unofficial preliminary guidance; verify on the official government portal."}
+    priority = {"farmer": 0, "urban": 1, "nfsa_household": 2, "pmjay_verified_beneficiary": 3, "owns_cultivable_land": 4, "income_tax_payer": 5, "excluded_public_office": 6, "excluded_government_employment": 7, "excluded_professional": 8, "annual_household_income": 9}
+    missing=sorted(assessment["missing"],key=lambda x:priority.get(x,20))
+    field=missing[0]
+    return {"reply":QUESTIONS.get(field,"Please provide: "+field.replace("_"," ")),
+            "question_field":field,"results":results,
+            "disclaimer":"Unofficial preliminary guidance; verify on the official government portal."}
 
 @app.post("/api/ask")
 def ask(req: ChatRequest):
