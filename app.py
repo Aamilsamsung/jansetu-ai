@@ -82,3 +82,8 @@ def chat(req: ChatRequest):
         field = missing[0]
         return {"reply": QUESTIONS[field], "question_field": field, "results": results, "disclaimer": "Unofficial preliminary guidance; verify on the official government portal."}
     return {"reply": "Your preliminary assessment is ready. Review each scheme for reasons, required documents, steps and official source.", "question_field": None, "results": results, "disclaimer": "Unofficial preliminary guidance; verify on the official government portal."}
+
+@app.post("/api/ask")
+def ask(req: ChatRequest):
+    from retrieval import answer
+    return answer(req.message,req.profile)
