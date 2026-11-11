@@ -42,5 +42,5 @@ el("mic").onclick=()=>{
     rec.onend=()=>{recording=false;recognition=null;if(el("voiceStatus").textContent.startsWith("Listening")||el("voiceStatus").textContent.startsWith("Hearing"))micStatus(el("input").value?"Transcription ready. Tap Send.":"Stopped. Tap microphone to retry.");el("mic").setAttribute("aria-pressed","false")};
     rec.start();
   }catch(e){recording=false;recognition=null;micStatus("Could not start microphone. Check permission and retry.")}
-}fetch("/api/schemes").then(r=>{if(!r.ok)throw Error();return r.json()}).then(rows=>{schemes=rows;refresh()}).catch(()=>bubble("Backend unavailable. Check Render API connection."));
+};fetch("/api/schemes").then(r=>{if(!r.ok)throw Error();return r.json()}).then(rows=>{schemes=rows;refresh()}).catch(()=>bubble("Backend unavailable. Check Render API connection."));
 </script></body></html>
