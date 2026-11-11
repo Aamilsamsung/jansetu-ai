@@ -9,7 +9,30 @@ def terms(s):
     for word in words:
         out.update(ALIASES.get(word,"").split())
     return out
+def extract_profile(message, profile):
+    updated=dict(profile)
+    normalized=message.lower()
+    age=re.search(r"\\b(?:i am|i'm|age(?:d)?|years? old)\\s*(\\d{1,3})\\b|\\b(\\d{1,3})\\s*(?:years? old|yr old)\\b",normalized)
+    if age:
+        value=int(next(v for v in age.groups() if v))
+        if 0 < value < 120: updated["age"]=value
+    if re.search(r"\\b(?:farmer|famer|farming|agriculturist)\\b",normalized):
+        updated["farmer"]=True
+    if re.search(r"\\bkerala\\b",normalized): updated["state"]="Kerala"
+    if re.search(r"\\b(?:karnataka|tamil nadu|maharashtra)\\b",normalized):
+        updated["state"]=re.search(r"\\b(karnataka|tamil nadu|maharashtra)\\b",normalized).group(1).title()
+    return updated
+
 def answer(message,profile):
+    profile=extract_profile(message,profile)
+    introduction=re.search(r"\\b(?:i am|i'm|im|my age|from kerala|famer|farmer)\\b",message.lower()) is not None
+    if introduction and profile.get("farmer") and not (terms(message) & {"apply","application","documents","eligible","eligibility"}):
+        details=[]
+        if profile.get("age"): details.append(str(profile["age"])+" years old")
+        details.append("a farmer")
+        if profile.get("state"): details.append("from "+profile["state"])
+        return {"reply":"I understand you're "+", ".join(details)+". I can help you explore farming schemes such as PM-KISAN and Kisan Credit Card. Do you own cultivable agricultural land? This is a preliminary check; other eligibility conditions may apply.","sources":["https://www.myscheme.gov.in/schemes/pm-kisan","https://www.myscheme.gov.in/schemes/kcc"],"matches":[],"grounding":"profile_intake","profile":profile}
+
     query=terms(message)
     ranked=[]
     for scheme in SCHEMES:
@@ -19,7 +42,7 @@ def answer(message,profile):
     ranked.sort(key=lambda row:(-row[0],row[1]["name"]))
     matches=[s for _,s in ranked[:3]]
     if not matches:
-        return {"reply":"I don't have verified information about that in my current scheme database, so I won't guess. Please check myscheme.gov.in.","sources":[],"matches":[],"grounding":"no_match"}
+        return {"reply":"I don't have verified information about that in my current scheme database, so I won't guess. Please check myscheme.gov.in.","sources":[],"matches":[],"grounding":"no_match","profile":profile}
     replies=[]
     for scheme in matches:
         status=evaluate(profile,scheme)
@@ -32,4 +55,4 @@ def answer(message,profile):
         else:
             detail=scheme["benefit"]+" Preliminary status: "+status["status"].replace("_"," ")+"."
         replies.append(scheme["name"]+": "+detail+" Official source: "+scheme["source"])
-    return {"reply":"\n\n".join(replies)+"\n\nUnofficial preliminary guidance only. Verify current rules on the official pages.","sources":[s["source"] for s in matches],"matches":[s["id"] for s in matches],"grounding":"curated_records"}
+    return {"reply":"\n\n".join(replies)+"\n\nUnofficial preliminary guidance only. Verify current rules on the official pages.","sources":[s["source"] for s in matches],"matches":[s["id"] for s in matches],"grounding":"curated_records","profile":profile}
