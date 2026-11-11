@@ -84,18 +84,17 @@ def chat(req: ChatRequest):
     readable=lambda field: QUESTIONS.get(field,field.replace("_"," "))
     if assessment["status"]=="not_eligible":
         reasons="; ".join(readable(field) for field in assessment["failed"])
-        reply=(f"Preliminary result for {scheme['name']}: NOT ELIGIBLE based on the answers provided. "
-               f"Unmet condition(s): {reasons}. "
-               "If you answered incorrectly, reset and check again. "
-               f"Official source: {scheme['source']}. This is not an official decision.")
+        reply=(f"❌ You may not qualify for {scheme['name']}. "
+               f"Reason: {reasons}. "
+               f"Details: {scheme['source']} "
+               "(Please verify with the official authority.)")
         return {"reply":reply,"question_field":None,"results":results,"disclaimer":"Unofficial preliminary guidance; verify on the official government portal."}
     if assessment["status"]=="potentially_eligible":
-        reply=(f"Preliminary result: POTENTIALLY ELIGIBLE for {scheme['name']}. "
-               f"Listed benefit: {scheme['benefit']} "
-               f"Documents: {'; '.join(scheme['documents'])}. "
-               f"How to apply: {'; '.join(scheme['steps'])}. "
-               f"Official source: {scheme['source']}. "
-               "This is not approval; final eligibility is determined by the responsible authority.")
+        reply=(f"✅ You may qualify for {scheme['name']}! "
+               f"Benefit: {scheme['benefit'].split(' for qualifying')[0].rstrip('.')} "
+               f"Apply: {scheme['steps'][-1]}. "
+               f"Check details: {scheme['source']} "
+               "(Final approval depends on official verification.)")
         return {"reply":reply,"question_field":None,"results":results,"disclaimer":"Unofficial preliminary guidance; verify on the official government portal."}
     priority = {"farmer": 0, "urban": 1, "nfsa_household": 2, "pmjay_verified_beneficiary": 3, "owns_cultivable_land": 4, "income_tax_payer": 5, "excluded_public_office": 6, "excluded_government_employment": 7, "excluded_professional": 8, "annual_household_income": 9}
     missing=sorted(assessment["missing"],key=lambda x:priority.get(x,20))
