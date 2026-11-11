@@ -111,7 +111,7 @@ def ask(req: ChatRequest):
         from gemini_agent import explain
         generated = explain(req.message, result.get("profile", {}), result)
         if generated:
-            result["reply"] = generated + "\n\nVerified rule-based assessment: " + result["reply"]
+            result["reply"] = generated
             result["ai_used"] = True
         else:
             result["ai_used"] = False
