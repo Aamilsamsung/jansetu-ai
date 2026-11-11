@@ -47,7 +47,7 @@ def explain(message, profile, assessment):
         # Don't allow generated text to silently omit the official source or change status.
         for source in assessment.get("sources", []):
             if source not in text:
-                text += "\\nOfficial source: " + source
+                text += "\nOfficial source: " + source
         return text
     except (urllib.error.URLError, TimeoutError, ValueError, KeyError, OSError):
         return None
