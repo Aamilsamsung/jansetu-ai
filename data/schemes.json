@@ -1,0 +1,159 @@
+[
+  {
+    "id": "pmkisan",
+    "name": "PM-KISAN",
+    "category": "Agriculture",
+    "benefit": "₹6,000 per year in three instalments for qualifying landholding farmer families, subject to exclusions.",
+    "source": "https://www.myscheme.gov.in/hi/schemes/pm-kisan",
+    "checked": "2026-11-11",
+    "rules": [
+      {
+        "field": "farmer",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "field": "owns_cultivable_land",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "field": "income_tax_payer",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "field": "excluded_public_office",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "field": "excluded_government_employment",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "field": "excluded_professional",
+        "op": "eq",
+        "value": false
+      }
+    ],
+    "documents": [
+      "Identity proof requested by the official portal",
+      "Landholding papers",
+      "Bank account details (only on official application portal)"
+    ],
+    "steps": [
+      "Open the official scheme page",
+      "Review all exclusions carefully",
+      "Follow official registration or CSC guidance"
+    ]
+  },
+  {
+    "id": "kcc",
+    "name": "Kisan Credit Card",
+    "category": "Agriculture",
+    "benefit": "Credit support for eligible farming and allied activities, subject to bank assessment.",
+    "source": "https://www.myscheme.gov.in/schemes/kcc",
+    "checked": "2026-11-11",
+    "rules": [
+      {
+        "field": "farmer",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "documents": [
+      "Application form",
+      "Identity and address proof",
+      "Landholding or cultivation evidence where applicable"
+    ],
+    "steps": [
+      "Check participating-bank terms",
+      "Confirm eligibility and documents",
+      "Submit an application through the selected bank"
+    ]
+  },
+  {
+    "id": "pmayurban",
+    "name": "PM Awas Yojana — Urban",
+    "category": "Housing",
+    "benefit": "Housing assistance under applicable PMAY-U components. Benefit and qualifying criteria differ by component.",
+    "source": "https://www.myscheme.gov.in/schemes/pmay-u",
+    "checked": "2026-11-11",
+    "rules": [
+      {
+        "field": "urban",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "field": "annual_household_income",
+        "op": "lte",
+        "value": 1800000
+      },
+      {
+        "field": "owns_pucca_house",
+        "op": "eq",
+        "value": false
+      }
+    ],
+    "documents": [
+      "Identity and residence proof",
+      "Income proof",
+      "Housing ownership declaration",
+      "Component-specific documents"
+    ],
+    "steps": [
+      "Check the current PMAY-U phase and component",
+      "Confirm detailed component eligibility on the official portal",
+      "Follow the portal's application instructions"
+    ]
+  },
+  {
+    "id": "pmgkay",
+    "name": "Pradhan Mantri Garib Kalyan Anna Yojana",
+    "category": "Food",
+    "benefit": "Foodgrain support for eligible NFSA beneficiary households.",
+    "source": "https://www.myscheme.gov.in/schemes/pm-gkay",
+    "checked": "2026-11-11",
+    "rules": [
+      {
+        "field": "nfsa_household",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "documents": [
+      "NFSA ration card or other accepted beneficiary proof"
+    ],
+    "steps": [
+      "Check NFSA status with the state food department",
+      "Confirm current entitlement",
+      "Visit an authorized distribution outlet"
+    ]
+  },
+  {
+    "id": "pmjay",
+    "name": "Ayushman Bharat PM-JAY",
+    "category": "Health",
+    "benefit": "Up to ₹5 lakh per family per year for covered hospitalisation under the applicable beneficiary rules.",
+    "source": "https://www.myscheme.gov.in/hi/schemes/ab-pmjay",
+    "checked": "2026-11-11",
+    "rules": [
+      {
+        "field": "pmjay_verified_beneficiary",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "documents": [
+      "Identity proof requested by authorized enrolment channels"
+    ],
+    "steps": [
+      "Verify beneficiary status through official PM-JAY channels",
+      "Confirm hospital empanelment",
+      "Follow authorized cashless treatment procedures"
+    ]
+  }
+]
